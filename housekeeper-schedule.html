@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>钟点工排班系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .schedule-container {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        tr:hover {
+            background: #f9f9f9;
+        }
+        
+        .date-cell {
+            font-weight: bold;
+            color: #333;
+            min-width: 100px;
+        }
+        
+        .day-cell {
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .tasks-cell {
+            max-width: 400px;
+        }
+        
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 5px 0;
+            padding: 5px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+        
+        .task-item input[type="checkbox"] {
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+        }
+        
+        .task-item.completed {
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
+        
+        .task-label {
+            flex: 1;
+            cursor: pointer;
+        }
+        
+        .task-count {
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .time-cell {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: bold;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .modal-buttons button {
+            flex: 1;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏠 钟点工排班系统</h1>
+        <p class="subtitle">自动生成一年的任务清单</p>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-label">总排班次数</div>
+                <div class="stat-value" id="totalSchedules">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">已完成</div>
+                <div class="stat-value" id="completedCount">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">待完成</div>
+                <div class="stat-value" id="pendingCount">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">完成率</div>
+                <div class="stat-value" id="completionRate">0%</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="filter-group">
+                <label>筛选月份：</label>
+                <select id="monthFilter" onchange="filterSchedule()">
+                    <option value="">全部</option>
+                </select>
+            </div>
+            <button class="btn-primary" onclick="exportToCSV()">📥 导出为CSV</button>
+            <button class="btn-secondary" onclick="resetAllTasks()">🔄 重置所有任务</button>
+        </div>
+        
+        <div class="schedule-container">
+            <table id="scheduleTable">
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>星期</th>
+                        <th>时间</th>
+                        <th>任务清单</th>
+                    </tr>
+                </thead>
+                <tbody id="scheduleBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">编辑任务</div>
+            <div class="form-group">
+                <label>日期</label>
+                <input type="text" id="editDate" readonly>
+            </div>
+            <div class="form-group">
+                <label>任务备注</label>
+                <textarea id="editNotes" placeholder="输入任务备注..."></textarea>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-secondary" onclick="closeEditModal()">取消</button>
+                <button class="btn-primary" onclick="saveEditModal()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const TASKS = {
+            every_visit: [
+                { name: '洗衣服', duration: '30分钟' },
+                { name: '挂衣服', duration: '20分钟' },
+                { name: '清扫地机器人灰尘', duration: '10分钟' }
+            ],
+            conditional: [
+                { name: '烫衣服', duration: '30分钟', frequency: '2-3件' }
+            ],
+            biweekly: [
+                { name: '洗两个床单', duration: '30分钟' },
+                { name: '换床单', duration: '20分钟' },
+                { name: '厕所清洁', duration: '30分钟' },
+                { name: '清洗扫地机器人抹布', duration: '15分钟' }
+            ]
+        };
+        
+        let schedules = [];
+        let editingIndex = -1;
+        
+        function generateSchedules() {
+            schedules = [];
+            const startDate = new Date(2026, 1, 28); // 2026年2月28日
+            const endDate = new Date(2027, 1, 27); // 一年后
+            
+            let biweeklyCount = 0;
+            
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                const dayOfWeek = d.getDay();
+                
+                // 周二(2) 或 周六(6)
+                if (dayOfWeek === 2 || dayOfWeek === 6) {
+                    const schedule = {
+                        date: new Date(d),
+                        tasks: [],
+                        notes: '',
+                        completed: false
+                    };
+                    
+                    // 每次都要做的任务
+                    schedule.tasks.push(...TASKS.every_visit.map(t => ({ ...t, completed: false })));
+                    
+                    // 烫衣服（每次2-3件）
+                    schedule.tasks.push({ ...TASKS.conditional[0], completed: false });
+                    
+                    // 两周一次的任务
+                    if (biweeklyCount % 2 === 0) {
+                        schedule.tasks.push(...TASKS.biweekly.map(t => ({ ...t, completed: false })));
+                    }
+                    
+                    schedules.push(schedule);
+                    biweeklyCount++;
+                }
+            }
+            
+            loadSchedulesFromStorage();
+            renderSchedules();
+            updateStats();
+            populateMonthFilter();
+        }
+        
+        function renderSchedules() {
+            const tbody = document.getElementById('scheduleBody');
+            tbody.innerHTML = '';
+            
+            if (schedules.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-state">暂无排班</td></tr>';
+                return;
+            }
+            
+            schedules.forEach((schedule, index) => {
+                const row = document.createElement('tr');
+                const dateStr = schedule.date.toLocaleDateString('zh-CN');
+                const dayStr = ['日', '一', '二', '三', '四', '五', '六'][schedule.date.getDay()];
+                
+                let tasksHTML = '';
+                schedule.tasks.forEach((task, taskIndex) => {
+                    const isCompleted = task.completed ? 'completed' : '';
+                    tasksHTML += `
+                        <div class="task-item ${isCompleted}">
+                            <input type="checkbox" ${task.completed ? 'checked' : ''} 
+                                onchange="toggleTask(${index}, ${taskIndex})">
+                            <span class="task-label">${task.name}</span>
+                            <span class="task-count">${task.frequency || task.duration}</span>
+                        </div>
+                    `;
+                });
+                
+                row.innerHTML = `
+                    <td class="date-cell">${dateStr}</td>
+                    <td class="day-cell">周${dayStr}</td>
+                    <td class="time-cell">14:00-16:00<br>(2小时)</td>
+                    <td class="tasks-cell">
+                        ${tasksHTML}
+                        <div style="margin-top: 10px;">
+                            <button class="btn-secondary" style="padding: 5px 10px; font-size: 12px;" 
+                                onclick="openEditModal(${index})">📝 编辑备注</button>
+                        </div>
+                        ${schedule.notes ? `<div style="margin-top: 8px; padding: 8px; background: #fff3cd; border-radius: 4px; font-size: 12px; color: #856404;">备注: ${schedule.notes}</div>` : ''}
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+        
+        function toggleTask(scheduleIndex, taskIndex) {
+            schedules[scheduleIndex].tasks[taskIndex].completed = 
+                !schedules[scheduleIndex].tasks[taskIndex].completed;
+            saveSchedulesToStorage();
+            updateStats();
+            renderSchedules();
+        }
+        
+        function openEditModal(index) {
+            editingIndex = index;
+            const schedule = schedules[index];
+            document.getElementById('editDate').value = schedule.date.toLocaleDateString('zh-CN');
+            document.getElementById('editNotes').value = schedule.notes;
+            document.getElementById('editModal').classList.add('active');
+        }
+        
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+            editingIndex = -1;
+        }
+        
+        function saveEditModal() {
+            if (editingIndex >= 0) {
+                schedules[editingIndex].notes = document.getElementById('editNotes').value;
+                saveSchedulesToStorage();
+                renderSchedules();
+                closeEditModal();
+            }
+        }
+        
+        function filterSchedule() {
+            const monthFilter = document.getElementById('monthFilter').value;
+            const tbody = document.getElementById('scheduleBody');
+            tbody.innerHTML = '';
+            
+            let filtered = schedules;
+            if (monthFilter) {
+                const [year, month] = monthFilter.split('-');
+                filtered = schedules.filter(s => 
+                    s.date.getFullYear() === parseInt(year) && 
+                    s.date.getMonth() === parseInt(month) - 1
+                );
+            }
+            
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-state">该月份暂无排班</td></tr>';
+                return;
+            }
+            
+            filtered.forEach((schedule, index) => {
+                const actualIndex = schedules.indexOf(schedule);
+                const row = document.createElement('tr');
+                const dateStr = schedule.date.toLocaleDateString('zh-CN');
+                const dayStr = ['日', '一', '二', '三', '四', '五', '六'][schedule.date.getDay()];
+                
+                let tasksHTML = '';
+                schedule.tasks.forEach((task, taskIndex) => {
+                    const isCompleted = task.completed ? 'completed' : '';
+                    tasksHTML += `
+                        <div class="task-item ${isCompleted}">
+                            <input type="checkbox" ${task.completed ? 'checked' : ''} 
+                                onchange="toggleTask(${actualIndex}, ${taskIndex})">
+                            <span class="task-label">${task.name}</span>
+                            <span class="task-count">${task.frequency || task.duration}</span>
+                        </div>
+                    `;
+                });
+                
+                row.innerHTML = `
+                    <td class="date-cell">${dateStr}</td>
+                    <td class="day-cell">周${dayStr}</td>
+                    <td class="time-cell">14:00-16:00<br>(2小时)</td>
+                    <td class="tasks-cell">
+                        ${tasksHTML}
+                        <div style="margin-top: 10px;">
+                            <button class="btn-secondary" style="padding: 5px 10px; font-size: 12px;" 
+                                onclick="openEditModal(${actualIndex})">📝 编辑备注</button>
+                        </div>
+                        ${schedule.notes ? `<div style="margin-top: 8px; padding: 8px; background: #fff3cd; border-radius: 4px; font-size: 12px; color: #856404;">备注: ${schedule.notes}</div>` : ''}
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+        
+        function populateMonthFilter() {
+            const select = document.getElementById('monthFilter');
+            const months = new Set();
+            
+            schedules.forEach(s => {
+                const year = s.date.getFullYear();
+                const month = String(s.date.getMonth() + 1).padStart(2, '0');
+                months.add(`${year}-${month}`);
+            });
+            
+            Array.from(months).sort().forEach(month => {
+                const option = document.createElement('option');
+                option.value = month;
+                const [year, m] = month.split('-');
+                option.textContent = `${year}年${parseInt(m)}月`;
+                select.appendChild(option);
+            });
+        }
+        
+        function updateStats() {
+            const total = schedules.length;
+            let completed = 0;
+            let totalTasks = 0;
+            let completedTasks = 0;
+            
+            schedules.forEach(s => {
+                s.tasks.forEach(t => {
+                    totalTasks++;
+                    if (t.completed) completedTasks++;
+                });
+            });
+            
+            document.getElementById('totalSchedules').textContent = total;
+            document.getElementById('completedCount').textContent = completedTasks;
+            document.getElementById('pendingCount').textContent = totalTasks - completedTasks;
+            
+            const rate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+            document.getElementById('completionRate').textContent = rate + '%';
+        }
+        
+        function exportToCSV() {
+            let csv = '日期,星期,时间,任务,状态,备注\n';
+            
+            schedules.forEach(s => {
+                const dateStr = s.date.toLocaleDateString('zh-CN');
+                const dayStr = ['日', '一', '二', '三', '四', '五', '六'][s.date.getDay()];
+                
+                s.tasks.forEach((task, idx) => {
+                    const status = task.completed ? '已完成' : '待完成';
+                    const notes = idx === 0 ? s.notes : '';
+                    csv += `"${dateStr}","周${dayStr}","14:00-16:00","${task.name}","${status}","${notes}"\n`;
+                });
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = '钟点工排班表.csv';
+            link.click();
+        }
+        
+        function resetAllTasks() {
+            if (confirm('确定要重置所有任务吗？')) {
+                schedules.forEach(s => {
+                    s.tasks.forEach(t => t.completed = false);
+                });
+                saveSchedulesToStorage();
+                updateStats();
+                renderSchedules();
+            }
+        }
+        
+        function saveSchedulesToStorage() {
+            const data = schedules.map(s => ({
+                date: s.date.toISOString(),
+                tasks: s.tasks,
+                notes: s.notes,
+                completed: s.completed
+            }));
+            localStorage.setItem('schedules', JSON.stringify(data));
+        }
+        
+        function loadSchedulesFromStorage() {
+            const data = localStorage.getItem('schedules');
+            if (data) {
+                const parsed = JSON.parse(data);
+                parsed.forEach((item, index) => {
+                    if (index < schedules.length) {
+                        schedules[index].tasks = item.tasks;
+                        schedules[index].notes = item.notes;
+                        schedules[index].completed = item.completed;
+                    }
+                });
+            }
+        }
+        
+        // 初始化
+        generateSchedules();
+    </script>
+</body>
+</html>
